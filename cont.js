@@ -3,6 +3,7 @@
 class Cont {
     constructor() {
         this.texts = window.texts;
+		delete window.texts;
         this.lowerTexts = this.texts.map(function(text) {
             return text.toLowerCase();
         });
@@ -12,12 +13,21 @@ class Cont {
         this.idsByDoubleAlpha = {};
         this.lowerTexts.map(this.getDoubleAlphabet).forEach(function(doubleAlphabet, id) {
             for (var i=0, n=doubleAlphabet.length; i<n; i++) {
-                var doubleAlpha = doubleAlphabet[i];
+                var doubleAlpha = doubleAlphabet[i],
+					list = this.idsByDoubleAlpha[doubleAlpha];
                 
-                if ( !this.idsByDoubleAlpha[doubleAlpha] ) {
-                    this.idsByDoubleAlpha[doubleAlpha] = [id];
+                if ( !list ) {
+                    this.idsByDoubleAlpha[doubleAlpha] = [id,id];
+					this.idsByDoubleAlpha[doubleAlpha].count = 1;
                 } else {
-                    this.idsByDoubleAlpha[doubleAlpha].push(id);
+					var last = list[list.length - 1];
+					if ( last === id - 1 ) {
+						list[ list.length - 1 ] = id;
+					} else {
+						list.push(id);
+						list.push(id);
+					}
+					list.count++;
                 }
             }
         }, this);
@@ -96,19 +106,23 @@ class Cont {
                 return [];
             }
             
-            if ( ids.length < minIds.length ) {
+            if ( ids.count < minIds.count ) {
                 minIds = ids;
             }
         }
         
         var out = [];
-        for (i=0, n=minIds.length; i<n; i++) {
-            var id = minIds[i],
-                text = this.lowerTexts[ id ];
+        for (i=0, n=minIds.length; i<n; i+=2) {
+            var firstId = minIds[i],
+				lastId = minIds[i+1];
             
-            if ( text.indexOf(search) > -1 ) {
-                out.push(id);
-            }
+			for (var id=firstId; id<=lastId; id++) {
+				var text = this.lowerTexts[ id ];
+				
+				if ( text.indexOf(search) > -1 ) {
+					out.push(id);
+				}
+			}
         }
         return out;
     }
